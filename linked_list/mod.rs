@@ -192,6 +192,7 @@ impl<T> LinkedList<T> {
         println!();
     }
 
+    #[inline]
     pub fn len(&self) -> usize {
         self.len
     }

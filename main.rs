@@ -167,7 +167,7 @@ fn main() {
         println!("data = {data}");
     }
 
-    for data in head {
+    for data in head.into_iter().plus_iter() {
         println!("data = {data}");
     }
 

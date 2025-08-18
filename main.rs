@@ -1,6 +1,6 @@
 use std::{fmt::Debug, marker::PhantomData};
 
-use linked_list::LinkedList;
+use linked_list::{LinkedList, PlusIterator};
 
 mod linked_list;
 // use std::{borrow::Borrow, cell::RefCell, rc::Rc};
@@ -160,8 +160,10 @@ fn main() {
     // print!("pop back => ");
     // head.pop_back();
     // head.print();
+    //
+    //
 
-    for data in &head {
+    for data in (&head).into_iter().plus_iter() {
         println!("data = {data}");
     }
 

@@ -1,4 +1,4 @@
-use std::{fmt::Debug, marker::PhantomData, mem::ManuallyDrop, ptr::null_mut};
+use std::{fmt::Debug, marker::PhantomData, mem::ManuallyDrop, ops::Add, ptr::null_mut};
 
 #[derive(Debug)]
 pub struct LinkedList<T> {
@@ -32,11 +32,8 @@ trait DropPointer {
     fn drop(self);
 }
 
-trait MoveForward {
+trait MoveBidirection {
     fn move_forward(&mut self);
-}
-
-trait MoveBackward {
     fn move_backward(&mut self);
 }
 
@@ -50,7 +47,7 @@ impl<T> DropPointer for *const LinkedListNode<T> {
     }
 }
 
-impl<T> MoveForward for *mut LinkedListNode<T> {
+impl<T> MoveBidirection for *mut LinkedListNode<T> {
     fn move_forward(&mut self) {
         if self.is_null() {
             return;
@@ -67,9 +64,7 @@ impl<T> MoveForward for *mut LinkedListNode<T> {
             }
         }
     }
-}
 
-impl<T> MoveBackward for *mut LinkedListNode<T> {
     fn move_backward(&mut self) {
         if self.is_null() {
             return;
@@ -226,7 +221,6 @@ pub struct LinkedListIntoIterator<T> {
 
 pub struct LinkedListIterator<'a, T> {
     node: Option<&'a LinkedListNode<T>>,
-    _unused: PhantomData<&'a LinkedList<T>>,
 }
 
 impl<'a, T> Iterator for LinkedListIterator<'a, T>
@@ -257,7 +251,6 @@ impl<'a, T> IntoIterator for &'a LinkedList<T> {
             } else {
                 unsafe { self.head.as_ref() }
             },
-            _unused: PhantomData,
         }
     }
 }
@@ -318,6 +311,39 @@ impl<T> Drop for LinkedListIntoIterator<T> {
             let node = head;
             head = unsafe { (*head).next };
             drop(unsafe { Box::from_raw(node.cast_mut()) });
+        }
+    }
+}
+
+pub struct PlusIteratorStruct<'a, T> {
+    iter: &'a mut dyn Iterator<Item = T>,
+}
+
+pub trait PlusIterator<T> {
+    fn plus_iter(&mut self) -> PlusIteratorStruct<'_, T>;
+}
+
+impl<I, T> PlusIterator<T> for I
+where
+    I: Iterator<Item = T>,
+    T: Add<i32, Output = i32>,
+{
+    fn plus_iter(&mut self) -> PlusIteratorStruct<'_, T> {
+        PlusIteratorStruct { iter: self }
+    }
+}
+
+impl<'a, T> Iterator for PlusIteratorStruct<'a, T>
+where
+    T: Add<i32, Output = i32>,
+{
+    type Item = i32;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let data = self.iter.next();
+        match data {
+            Some(data) => Some(data + 1),
+            None => None,
         }
     }
 }

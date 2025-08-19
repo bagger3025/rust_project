@@ -6,24 +6,29 @@ use std::{
     slice,
 };
 
-pub struct MyVec<T> {
+struct RawVec<T> {
     ptr: NonNull<T>,
     cap: usize,
-    len: usize,
 }
 
-unsafe impl<T: Send> Send for MyVec<T> {}
-unsafe impl<T: Sync> Sync for MyVec<T> {}
+unsafe impl<T: Send> Send for RawVec<T> {}
+unsafe impl<T: Sync> Sync for RawVec<T> {}
 
-impl<T> MyVec<T> {
-    pub fn new() -> Self {
-        assert!(mem::size_of::<T>() != 0, "We're not ready to handle ZSTs");
-
+impl<T> RawVec<T> {
+    fn new() -> Self {
+        assert!(mem::size_of::<T>() != 0, "TODO: Implement ZST support");
         Self {
             ptr: NonNull::dangling(),
-            len: 0,
             cap: 0,
         }
+    }
+
+    fn ptr_mut(&mut self, idx: usize) -> *mut T {
+        unsafe { self.ptr.as_ptr().add(idx) }
+    }
+
+    fn ptr(&self, idx: usize) -> *const T {
+        unsafe { self.ptr.as_ptr().add(idx) }
     }
 
     fn grow(&mut self) {
@@ -61,14 +66,46 @@ impl<T> MyVec<T> {
         };
         self.cap = new_cap;
     }
+}
+
+impl<T> Drop for RawVec<T> {
+    fn drop(&mut self) {
+        if self.cap != 0 {
+            let layout = Layout::array::<T>(self.cap).unwrap();
+            unsafe {
+                alloc::dealloc(self.ptr.as_ptr() as *mut u8, layout);
+            }
+        }
+    }
+}
+
+pub struct MyVec<T> {
+    buf: RawVec<T>,
+    len: usize,
+}
+
+unsafe impl<T: Send> Send for MyVec<T> {}
+unsafe impl<T: Sync> Sync for MyVec<T> {}
+
+impl<T> MyVec<T> {
+    fn cap(&self) -> usize {
+        self.buf.cap
+    }
+
+    pub fn new() -> Self {
+        Self {
+            buf: RawVec::new(),
+            len: 0,
+        }
+    }
 
     pub fn push(&mut self, elem: T) {
-        if self.len == self.cap {
-            self.grow();
+        if self.len == self.cap() {
+            self.buf.grow();
         }
 
         unsafe {
-            ptr::write(self.ptr.as_ptr().add(self.len), elem);
+            ptr::write(self.buf.ptr_mut(self.len), elem);
         }
 
         // Can't fail, we'll OOM first.
@@ -80,7 +117,7 @@ impl<T> MyVec<T> {
             None
         } else {
             self.len -= 1;
-            unsafe { Some(ptr::read(self.ptr.as_ptr().add(self.len))) }
+            unsafe { Some(ptr::read(self.buf.ptr_mut(self.len))) }
         }
     }
 
@@ -88,16 +125,16 @@ impl<T> MyVec<T> {
         // Note: `<=` because it's valid to insert after everything
         // which would be equivalent to push.
         assert!(index <= self.len, "index out of bounds");
-        if self.len == self.cap {
-            self.grow();
+        if self.len == self.cap() {
+            self.buf.grow();
         }
         unsafe {
             ptr::copy(
-                self.ptr.as_ptr().add(index),
-                self.ptr.as_ptr().add(index + 1),
+                self.buf.ptr_mut(index),
+                self.buf.ptr_mut(index + 1),
                 self.len - index,
             );
-            ptr::write(self.ptr.as_ptr().add(index), elem);
+            ptr::write(self.buf.ptr_mut(index), elem);
         }
         self.len += 1;
     }
@@ -107,10 +144,10 @@ impl<T> MyVec<T> {
         assert!(index < self.len, "index out of bounds");
         unsafe {
             self.len -= 1;
-            let result = ptr::read(self.ptr.as_ptr().add(index));
+            let result = ptr::read(self.buf.ptr_mut(index));
             ptr::copy(
-                self.ptr.as_ptr().add(index + 1),
-                self.ptr.as_ptr().add(index),
+                self.buf.ptr_mut(index + 1),
+                self.buf.ptr_mut(index),
                 self.len - index,
             );
             result
@@ -120,18 +157,12 @@ impl<T> MyVec<T> {
 
 impl<T> Drop for MyVec<T> {
     fn drop(&mut self) {
-        if self.cap != 0 {
-            // calling `pop` is not needd if T : !Drop
-            // We can ask Rust if T needs_drop and omit the calls
-            // However in practice LLVM is really good at
-            // removing side-effect free code like this,
-            // so wouldn't bother unless notice it's not being stripped.
-            while let Some(_) = self.pop() {}
-            let layout = Layout::array::<T>(self.cap).unwrap();
-            unsafe {
-                alloc::dealloc(self.ptr.as_ptr() as *mut u8, layout);
-            }
-        }
+        // calling `pop` is not needed if T : !Drop
+        // We can ask Rust if T needs_drop and omit the calls
+        // However in practice LLVM is really good at
+        // removing side-effect free code like this,
+        // so wouldn't bother unless notice it's not being stripped.
+        while let Some(_) = self.pop() {}
     }
 }
 
@@ -139,19 +170,18 @@ impl<T> Deref for MyVec<T> {
     type Target = [T];
 
     fn deref(&self) -> &Self::Target {
-        unsafe { slice::from_raw_parts(self.ptr.as_ptr(), self.len) }
+        unsafe { slice::from_raw_parts(self.buf.ptr(0), self.len) }
     }
 }
 
 impl<T> DerefMut for MyVec<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        unsafe { slice::from_raw_parts_mut(self.ptr.as_ptr(), self.len) }
+        unsafe { slice::from_raw_parts_mut(self.buf.ptr_mut(0), self.len) }
     }
 }
 
 pub struct IntoIter<T> {
-    buf: NonNull<T>,
-    cap: usize,
+    buf: RawVec<T>,
     start: *const T,
     end: *const T,
 }
@@ -165,19 +195,14 @@ impl<T> IntoIterator for MyVec<T> {
         let vec = ManuallyDrop::new(self);
 
         // Can't destructure Vec since it's Drop
-        let ptr = vec.ptr;
-        let cap = vec.cap;
+        let buf = unsafe { ptr::read(&vec.buf) };
+        let cap = buf.cap;
         let len = vec.len;
 
         IntoIter {
-            buf: ptr,
-            cap,
-            start: ptr.as_ptr(),
-            end: if cap == 0 {
-                ptr.as_ptr()
-            } else {
-                unsafe { ptr.as_ptr().add(len) }
-            },
+            start: buf.ptr(0),
+            end: if cap == 0 { buf.ptr(0) } else { buf.ptr(len) },
+            buf,
         }
     }
 }
@@ -218,12 +243,6 @@ impl<T> DoubleEndedIterator for IntoIter<T> {
 
 impl<T> Drop for IntoIter<T> {
     fn drop(&mut self) {
-        if self.cap != 0 {
-            for _ in &mut *self {}
-            let layout = Layout::array::<T>(self.cap).unwrap();
-            unsafe {
-                alloc::dealloc(self.buf.as_ptr() as *mut u8, layout);
-            }
-        }
+        for _ in &mut *self {}
     }
 }

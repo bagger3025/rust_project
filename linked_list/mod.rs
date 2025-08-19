@@ -1,4 +1,10 @@
-use std::{fmt::Debug, marker::PhantomData, mem::ManuallyDrop, ops::Add, ptr::null_mut};
+use std::{
+    fmt::Debug,
+    marker::PhantomData,
+    mem::{self, ManuallyDrop},
+    ops::Add,
+    ptr::null_mut,
+};
 
 #[derive(Debug)]
 pub struct LinkedList<T> {
@@ -216,8 +222,6 @@ impl<T> Drop for LinkedList<T> {
 
 pub struct LinkedListIntoIterator<T> {
     node: *const LinkedListNode<T>,
-    _unused: PhantomData<LinkedList<T>>,
-    _unused_self: ManuallyDrop<LinkedList<T>>,
 }
 
 pub struct LinkedListIterator<'a, T> {
@@ -263,11 +267,8 @@ impl<T> IntoIterator for LinkedList<T> {
     fn into_iter(self) -> Self::IntoIter {
         let LinkedList { head, .. } = self;
 
-        let ret = LinkedListIntoIterator {
-            node: head,
-            _unused: PhantomData,
-            _unused_self: ManuallyDrop::new(self),
-        };
+        let ret = LinkedListIntoIterator { node: head };
+        mem::forget(self);
         // self.head = null_mut();
         // self.tail = null_mut();
         // self.len = 0;

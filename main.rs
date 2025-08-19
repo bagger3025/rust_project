@@ -1,11 +1,13 @@
 use std::{fmt::Debug, marker::PhantomData};
 
+mod vec;
+
 use linked_list::{LinkedList, PlusIterator};
 
 mod linked_list;
 // use std::{borrow::Borrow, cell::RefCell, rc::Rc};
 
-// struct LinkedList {
+// struct LinkdList {
 //     head: Option<Rc<RefCell<Box<LinkedListNode>>>>,
 //     tail: Option<Rc<RefCell<Box<LinkedListNode>>>>,
 // }
@@ -118,25 +120,6 @@ fn main() {
         _unused: PhantomData,
     };
 
-    {
-        let t = String::from("t");
-
-        println!("{:?}", vec);
-
-        vec.push(&t);
-        vec.push(&s);
-
-        println!("{:?}", vec);
-
-        // drop(t);
-        // println!("{:?}", vec);
-
-        println!("{:?}", ms);
-        ms.push(&t);
-        drop(t);
-        // println!("{:?}", ms);
-    }
-
     let mut head = LinkedList::<i32>::new();
 
     head.push_back(3);
@@ -152,16 +135,6 @@ fn main() {
         head.back().unwrap()
     );
     println!("{}", head.len());
-
-    // print!("pop front => ");
-    // head.pop_front();
-    // head.print();
-
-    // print!("pop back => ");
-    // head.pop_back();
-    // head.print();
-    //
-    //
 
     for data in (&head).into_iter().plus_iter() {
         println!("data = {data}");

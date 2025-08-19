@@ -1,7 +1,9 @@
 use std::{
     alloc::{self, Layout},
     mem,
-    ptr::NonNull,
+    ops::{Deref, DerefMut},
+    ptr::{self, NonNull},
+    slice,
 };
 
 pub struct MyVec<T> {
@@ -58,5 +60,91 @@ impl<T> MyVec<T> {
             None => alloc::handle_alloc_error(new_layout),
         };
         self.cap = new_cap;
+    }
+
+    pub fn push(&mut self, elem: T) {
+        if self.len == self.cap {
+            self.grow();
+        }
+
+        unsafe {
+            ptr::write(self.ptr.as_ptr().add(self.len), elem);
+        }
+
+        // Can't fail, we'll OOM first.
+        self.len += 1;
+    }
+
+    pub fn pop(&mut self) -> Option<T> {
+        if self.len == 0 {
+            None
+        } else {
+            self.len -= 1;
+            unsafe { Some(ptr::read(self.ptr.as_ptr().add(self.len))) }
+        }
+    }
+
+    pub fn insert(&mut self, index: usize, elem: T) {
+        // Note: `<=` because it's valid to insert after everything
+        // which would be equivalent to push.
+        assert!(index <= self.len, "index out of bounds");
+        if self.len == self.cap {
+            self.grow();
+        }
+        unsafe {
+            ptr::copy(
+                self.ptr.as_ptr().add(index),
+                self.ptr.as_ptr().add(index + 1),
+                self.len - index,
+            );
+            ptr::write(self.ptr.as_ptr().add(index), elem);
+        }
+        self.len += 1;
+    }
+
+    pub fn remove(&mut self, index: usize) -> T {
+        // Note `<` because it's not valid to remove after everything
+        assert!(index < self.len, "index out of bounds");
+        unsafe {
+            self.len -= 1;
+            let result = ptr::read(self.ptr.as_ptr().add(index));
+            ptr::copy(
+                self.ptr.as_ptr().add(index + 1),
+                self.ptr.as_ptr().add(index),
+                self.len - index,
+            );
+            result
+        }
+    }
+}
+
+impl<T> Drop for MyVec<T> {
+    fn drop(&mut self) {
+        if self.cap != 0 {
+            // calling `pop` is not needd if T : !Drop
+            // We can ask Rust if T needs_drop and omit the calls
+            // However in practice LLVM is really good at
+            // removing side-effect free code like this,
+            // so wouldn't bother unless notice it's not being stripped.
+            while let Some(_) = self.pop() {}
+            let layout = Layout::array::<T>(self.cap).unwrap();
+            unsafe {
+                alloc::dealloc(self.ptr.as_ptr() as *mut u8, layout);
+            }
+        }
+    }
+}
+
+impl<T> Deref for MyVec<T> {
+    type Target = [T];
+
+    fn deref(&self) -> &Self::Target {
+        unsafe { slice::from_raw_parts(self.ptr.as_ptr(), self.len) }
+    }
+}
+
+impl<T> DerefMut for MyVec<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        unsafe { slice::from_raw_parts_mut(self.ptr.as_ptr(), self.len) }
     }
 }

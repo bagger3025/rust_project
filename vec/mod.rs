@@ -1,5 +1,6 @@
 use std::{
     alloc::{self, Layout},
+    marker::PhantomData,
     mem::{self, ManuallyDrop},
     ops::{Deref, DerefMut},
     ptr::{self, NonNull},
@@ -180,34 +181,32 @@ impl<T> DerefMut for MyVec<T> {
     }
 }
 
-pub struct IntoIter<T> {
-    buf: RawVec<T>,
+struct RawValIter<T> {
     start: *const T,
     end: *const T,
 }
 
-impl<T> IntoIterator for MyVec<T> {
-    type Item = T;
-    type IntoIter = IntoIter<T>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        // Make sure not to drop Vec since that would free the buffer
-        let vec = ManuallyDrop::new(self);
-
-        // Can't destructure Vec since it's Drop
-        let buf = unsafe { ptr::read(&vec.buf) };
-        let cap = buf.cap;
-        let len = vec.len;
-
-        IntoIter {
-            start: buf.ptr(0),
-            end: if cap == 0 { buf.ptr(0) } else { buf.ptr(len) },
-            buf,
+impl<T> RawValIter<T> {
+    // unsafe to construct because it has no associated liftimes.
+    // This is necessary to store a RawValIter in the same struct as
+    // its actual allocation. OK since it's a private implementation
+    // detail.
+    unsafe fn new(slice: &[T]) -> Self {
+        Self {
+            start: slice.as_ptr(),
+            end: if slice.len() == 0 {
+                // if `len = 0`, then this is not actually allocated memory.
+                // Need to avoid offsetting because that will give wrong
+                // information to LLVM via GEP.
+                slice.as_ptr()
+            } else {
+                slice.as_ptr().add(slice.len())
+            },
         }
     }
 }
 
-impl<T> Iterator for IntoIter<T> {
+impl<T> Iterator for RawValIter<T> {
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -227,8 +226,7 @@ impl<T> Iterator for IntoIter<T> {
         (len, Some(len))
     }
 }
-
-impl<T> DoubleEndedIterator for IntoIter<T> {
+impl<T> DoubleEndedIterator for RawValIter<T> {
     fn next_back(&mut self) -> Option<Self::Item> {
         if self.start == self.end {
             None
@@ -241,8 +239,95 @@ impl<T> DoubleEndedIterator for IntoIter<T> {
     }
 }
 
+pub struct IntoIter<T> {
+    buf: RawVec<T>,
+    iter: RawValIter<T>,
+}
+
+impl<T> IntoIterator for MyVec<T> {
+    type Item = T;
+    type IntoIter = IntoIter<T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        unsafe {
+            let iter = RawValIter::new(&self);
+
+            let buf = ptr::read(&self.buf);
+            mem::forget(self);
+
+            IntoIter { iter, buf }
+        }
+    }
+}
+
+impl<T> Iterator for IntoIter<T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
+}
+
+impl<T> DoubleEndedIterator for IntoIter<T> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.iter.next_back()
+    }
+}
+
 impl<T> Drop for IntoIter<T> {
     fn drop(&mut self) {
         for _ in &mut *self {}
+    }
+}
+
+struct Drain<'a, T: 'a> {
+    // Need to bound the lifetime here, so we do it with `&'a mut Vec<T>`
+    // because that's semantically what we contain. We're just calling
+    // `pop()` and `remove(0)`.
+    vec: PhantomData<&'a mut Vec<T>>,
+    iter: RawValIter<T>,
+}
+
+impl<'a, T> Iterator for Drain<'a, T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
+}
+
+impl<'a, T> DoubleEndedIterator for Drain<'a, T> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.iter.next_back()
+    }
+}
+
+impl<'a, T> Drop for Drain<'a, T> {
+    fn drop(&mut self) {
+        for _ in &mut *self {}
+    }
+}
+
+impl<T> MyVec<T> {
+    pub fn drain(&mut self) -> Drain<T> {
+        let iter = unsafe { RawValIter::new(&self) };
+
+        // this is a mem::forget safety thing. If Drain is forgotten, we just
+        // leak the whole Vec's contents. Also we need to do this eventually
+        // anyway, so why not do it now?
+        self.len = 0;
+
+        Drain {
+            iter,
+            vec: PhantomData,
+        }
     }
 }

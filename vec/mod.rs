@@ -17,10 +17,16 @@ unsafe impl<T: Sync> Sync for RawVec<T> {}
 
 impl<T> RawVec<T> {
     fn new() -> Self {
-        assert!(mem::size_of::<T>() != 0, "TODO: Implement ZST support");
+        // This branch should be stripped at compile time.
+        let cap = if mem::size_of::<T>() == 0 {
+            usize::MAX
+        } else {
+            0
+        };
+
         Self {
             ptr: NonNull::dangling(),
-            cap: 0,
+            cap,
         }
     }
 
@@ -33,6 +39,10 @@ impl<T> RawVec<T> {
     }
 
     fn grow(&mut self) {
+        // since we set the capacity to usize::MAX when T has size 0,
+        // getting to here necessarily means the Vec is overfull.
+        assert!(mem::size_of::<T>() != 0, "capacity overflow");
+
         let (new_cap, new_layout) = if self.cap == 0 {
             (1, Layout::array::<T>(1).unwrap())
         } else {
@@ -71,7 +81,8 @@ impl<T> RawVec<T> {
 
 impl<T> Drop for RawVec<T> {
     fn drop(&mut self) {
-        if self.cap != 0 {
+        let elem_size = mem::size_of::<T>();
+        if self.cap != 0 && elem_size != 0 {
             let layout = Layout::array::<T>(self.cap).unwrap();
             unsafe {
                 alloc::dealloc(self.ptr.as_ptr() as *mut u8, layout);
@@ -194,7 +205,9 @@ impl<T> RawValIter<T> {
     unsafe fn new(slice: &[T]) -> Self {
         Self {
             start: slice.as_ptr(),
-            end: if slice.len() == 0 {
+            end: if mem::size_of::<T>() == 0 {
+                ((slice.as_ptr() as usize) + slice.len()) as *const _
+            } else if slice.len() == 0 {
                 // if `len = 0`, then this is not actually allocated memory.
                 // Need to avoid offsetting because that will give wrong
                 // information to LLVM via GEP.
@@ -214,26 +227,39 @@ impl<T> Iterator for RawValIter<T> {
             None
         } else {
             unsafe {
-                let result = ptr::read(self.start);
-                self.start = self.start.offset(1);
-                Some(result)
+                if mem::size_of::<T>() == 0 {
+                    self.start = (self.start as usize + 1) as *const _;
+                    Some(ptr::read(NonNull::<T>::dangling().as_ptr()))
+                } else {
+                    let old_ptr = self.start;
+                    self.start = self.start.offset(1);
+                    Some(ptr::read(old_ptr))
+                }
             }
         }
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        let len = (self.end as usize - self.start as usize) / mem::size_of::<T>();
+        let elem_size = mem::size_of::<T>();
+        let len =
+            (self.end as usize - self.start as usize) / if elem_size == 0 { 1 } else { elem_size };
         (len, Some(len))
     }
 }
+
 impl<T> DoubleEndedIterator for RawValIter<T> {
     fn next_back(&mut self) -> Option<Self::Item> {
         if self.start == self.end {
             None
         } else {
             unsafe {
-                self.end = self.end.offset(-1);
-                Some(ptr::read(self.end))
+                if mem::size_of::<T>() == 0 {
+                    self.end = (self.end as usize - 1) as *const _;
+                    Some(ptr::read(NonNull::<T>::dangling().as_ptr()))
+                } else {
+                    self.end = self.end.offset(-1);
+                    Some(ptr::read(self.end))
+                }
             }
         }
     }

@@ -1,7 +1,7 @@
 use std::{
     alloc::{self, Layout},
     marker::PhantomData,
-    mem::{self, ManuallyDrop},
+    mem,
     ops::{Deref, DerefMut},
     ptr::{self, NonNull},
     slice,

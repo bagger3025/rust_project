@@ -1,7 +1,9 @@
 use std::{fmt::Debug, marker::PhantomData};
 
+mod lifetimes;
 mod vec;
 
+use lifetimes::strsplit::StrSplit;
 use linked_list::{LinkedList, PlusIterator};
 
 mod linked_list;
@@ -113,12 +115,6 @@ impl<T> MyStruct<T> {
 
 fn main() {
     let s = String::from("s");
-    let mut vec = vec![];
-
-    let mut ms = MyStruct {
-        data: 3,
-        _unused: PhantomData,
-    };
 
     let mut head = LinkedList::<i32>::new();
 
@@ -144,5 +140,10 @@ fn main() {
         println!("data = {data}");
     }
 
-    println!("End of main")
+    println!("End of main");
+
+    let x = StrSplit::new("a", " ");
+    for t in x {
+        println!("{}", t);
+    }
 }

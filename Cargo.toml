@@ -8,3 +8,9 @@ edition = "2021"
 [[bin]]
 name = "rust_project"
 path = "main.rs"
+test = true
+doctest = true
+
+[lib]
+path = "lib.rs"
+

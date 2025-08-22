@@ -1,10 +1,4 @@
-use std::{
-    fmt::Debug,
-    marker::PhantomData,
-    mem::{self, ManuallyDrop},
-    ops::Add,
-    ptr::null_mut,
-};
+use std::{fmt::Debug, mem, ops::Add, ptr::null_mut};
 
 #[derive(Debug)]
 pub struct LinkedList<T> {

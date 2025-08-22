@@ -1,3 +1,4 @@
+#![warn(unused_macros)]
 use std::{
     alloc::{self, Layout},
     marker::PhantomData,
@@ -310,7 +311,7 @@ impl<T> Drop for IntoIter<T> {
     }
 }
 
-struct Drain<'a, T: 'a> {
+pub struct Drain<'a, T: 'a> {
     // Need to bound the lifetime here, so we do it with `&'a mut Vec<T>`
     // because that's semantically what we contain. We're just calling
     // `pop()` and `remove(0)`.

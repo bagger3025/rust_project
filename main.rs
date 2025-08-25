@@ -3,6 +3,7 @@ use std::{fmt::Debug, marker::PhantomData};
 
 mod iterator;
 mod lifetimes;
+mod pointers;
 mod vec;
 
 use lifetimes::strsplit::StrSplit;

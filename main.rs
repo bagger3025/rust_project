@@ -1,6 +1,7 @@
 #![allow(unused_macros, dead_code)]
 use std::{fmt::Debug, marker::PhantomData};
 
+mod channel;
 mod iterator;
 mod lifetimes;
 mod pointers;

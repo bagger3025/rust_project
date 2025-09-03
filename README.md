@@ -16,4 +16,5 @@ Following: [The Rustonomicon](https://doc.rust-lang.org/nomicon/vec/vec.html)
 - [Smart Pointers and Interior Mutability](https://youtu.be/8O0Nt9qY_vo)
 - [Channels](https://youtu.be/b4mS5UPHh20)
 - [Sorting Algorithms](https://youtu.be/h4RkCyJyXmM)
+- [Subtyping and Variance](https://youtu.be/iVYWDIW71jk)
 

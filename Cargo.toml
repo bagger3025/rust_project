@@ -2,12 +2,13 @@
 name = "rust_project"
 version = "0.1.0"
 edition = "2021"
+default-run = "main"
 
 [dependencies]
 rand = "0.9.2"
 
 [[bin]]
-name = "rust_project"
+name = "main"
 path = "main.rs"
 
 [[bin]]

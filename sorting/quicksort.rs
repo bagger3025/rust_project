@@ -55,33 +55,6 @@ impl Sorter for QuickSort {
         T: Ord,
     {
         quicksort(slice);
-        return;
-        if slice.len() <= 1 {
-            return;
-        }
-
-        let mid = 0;
-        let mut lp = 1;
-        let mut rp = slice.len() - 1;
-        let mid = loop {
-            while lp <= rp && slice[lp] < slice[mid] {
-                lp += 1;
-            }
-            while lp <= rp && slice[mid] < slice[rp] {
-                rp -= 1;
-            }
-
-            if lp < rp {
-                slice.swap(lp, rp);
-                lp += 1;
-                rp -= 1;
-            } else {
-                slice.swap(lp - 1, mid);
-                break lp - 1;
-            }
-        };
-        self.sort(&mut slice[..mid]);
-        self.sort(&mut slice[(mid + 1)..]);
     }
 }
 

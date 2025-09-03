@@ -13,23 +13,23 @@ pub fn strtok<'a>(s: &mut &'a str, delimiter: char) -> &'a str {
     }
 }
 
-fn strtok2(_s: &mut &str, _delimiter: char) {}
+fn _strtok2(_s: &mut &str, _delimiter: char) {}
 
-struct Deserializer<T> {
+struct _Deserializer<T> {
     _t: PhantomData<T>,
 }
 
-struct Deserializer2<T> {
+struct _Deserializer2<T> {
     _t: PhantomData<fn() -> T>,
     // or
     _t2: PhantomData<*const T>,
 }
 
-struct Deserializer3<T> {
+struct _Deserializer3<T> {
     _t: PhantomData<fn(T)>,
 }
 
-struct Deserializer4<T> {
+struct _Deserializer4<T> {
     _t1: PhantomData<*mut T>,
     // or
     _t2: PhantomData<fn(T) -> T>,

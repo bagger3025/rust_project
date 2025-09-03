@@ -17,4 +17,6 @@ Following: [The Rustonomicon](https://doc.rust-lang.org/nomicon/vec/vec.html)
 - [Channels](https://youtu.be/b4mS5UPHh20)
 - [Sorting Algorithms](https://youtu.be/h4RkCyJyXmM)
 - [Subtyping and Variance](https://youtu.be/iVYWDIW71jk)
+- [The Drop Check](https://youtu.be/TJOFSMpJdzg)
+  - [Rustonomicon: Drop Check](https://doc.rust-lang.org/nomicon/dropck.html)
 

@@ -3,6 +3,10 @@
 version = 4
 
 [[package]]
+name = "atomics"
+version = "0.1.0"
+
+[[package]]
 name = "boks"
 version = "0.1.0"
 
@@ -116,7 +120,6 @@ dependencies = [
 name = "rust_project"
 version = "0.1.0"
 dependencies = [
- "boks",
  "channel",
  "declarative_macros",
  "iterator",

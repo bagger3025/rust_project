@@ -3,7 +3,6 @@ use std::{fmt::Debug, marker::PhantomData};
 
 use lifetime::strsplit::StrSplit;
 use rust_project::linked_list::{LinkedList, PlusIterator};
-use rust_project::make_avec_and_print;
 
 #[derive(Debug)]
 struct MyStruct<T> {
@@ -21,7 +20,6 @@ impl<T> MyStruct<T> {
 }
 
 fn main() {
-    make_avec_and_print();
     let mut head = LinkedList::<i32>::new();
 
     head.push_back(3);

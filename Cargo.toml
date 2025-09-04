@@ -14,6 +14,7 @@ members = [
   "./crust_of_rust/06_sorting",
   "./crust_of_rust/07_subtyping_and_variance",
   "./crust_of_rust/08_drop_check",
+  "./crust_of_rust/09_atomics_memory_ordering",
 ]
 
 [dependencies]
@@ -23,7 +24,7 @@ iterator = {path = "./crust_of_rust/03_iterator"}
 pointers = {path = "./crust_of_rust/04_pointers"}
 channel = {path = "./crust_of_rust/05_channel"}
 sorting = {path = "./crust_of_rust/06_sorting"}
-boks = {path = "./crust_of_rust/07_subtyping_and_variance"}
+# boks = {path = "./crust_of_rust/07_subtyping_and_variance"}
 strtok = {path = "./crust_of_rust/08_drop_check"}
 
 [lib]

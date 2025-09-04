@@ -2,13 +2,19 @@
 
 ## Double Linked List
 
+| ./src/linked_list
+
 Implemented alone with rust std doc, Rustonomicon, etc.
 
 ## Implementing Vec
 
+| ./src/vec
+
 Following: [The Rustonomicon](https://doc.rust-lang.org/nomicon/vec/vec.html)
 
 ## Crust of Rust
+
+| ./crust_of_rust
 
 - [Lifetime Annotations](https://youtu.be/rAl-9HwD858)
 - [Declarative Macros](https://youtu.be/q6paRBbLgNw)

@@ -1,18 +1,9 @@
 #![allow(unused_macros, dead_code)]
 use std::{fmt::Debug, marker::PhantomData};
 
-mod channel;
-mod iterator;
-mod lifetimes;
-mod pointers;
-mod sorting;
-mod vec;
-
-use lifetimes::strsplit::StrSplit;
-use linked_list::{LinkedList, PlusIterator};
-
-mod declarative_macros;
-mod linked_list;
+use lifetime::strsplit::StrSplit;
+use rust_project::linked_list::{LinkedList, PlusIterator};
+use rust_project::make_avec_and_print;
 
 #[derive(Debug)]
 struct MyStruct<T> {
@@ -30,6 +21,7 @@ impl<T> MyStruct<T> {
 }
 
 fn main() {
+    make_avec_and_print();
     let mut head = LinkedList::<i32>::new();
 
     head.push_back(3);

@@ -4,22 +4,27 @@ version = "0.1.0"
 edition = "2021"
 default-run = "main"
 
+[workspace]
+members = [
+  "./crust_of_rust/01_lifetime",
+  "./crust_of_rust/02_declarative_macros",
+  "./crust_of_rust/03_iterator",
+  "./crust_of_rust/04_pointers",
+  "./crust_of_rust/05_channel",
+  "./crust_of_rust/06_sorting",
+  "./crust_of_rust/07_subtyping_and_variance",
+  "./crust_of_rust/08_drop_check",
+]
+
 [dependencies]
-rand = "0.9.2"
-boks = {path = "./boks"}
-
-[[bin]]
-name = "main"
-path = "main.rs"
-
-[[bin]]
-name = "sorting-bench"
-path = "sorting/benches/main.rs"
-
-[[bin]]
-name = "boks"
-path = "src/bin/boks.rs"
+lifetime = {path = "./crust_of_rust/01_lifetime"}
+declarative_macros = {path = "./crust_of_rust/02_declarative_macros"}
+iterator = {path = "./crust_of_rust/03_iterator"}
+pointers = {path = "./crust_of_rust/04_pointers"}
+channel = {path = "./crust_of_rust/05_channel"}
+sorting = {path = "./crust_of_rust/06_sorting"}
+boks = {path = "./crust_of_rust/07_subtyping_and_variance"}
+strtok = {path = "./crust_of_rust/08_drop_check"}
 
 [lib]
-path = "lib.rs"
-
+path = "./src/lib.rs"

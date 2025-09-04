@@ -1,9 +1,7 @@
 use std::{cell::Cell, rc::Rc, time::Instant};
 
-use rand::{seq::SliceRandom, Rng};
-use rust_project::sorting::{
-    BubbleSort, InsertionSort, QuickSort, SelectionSort, Sorter, StdSorter,
-};
+use rand::{Rng, seq::SliceRandom};
+use sorting::{BubbleSort, InsertionSort, QuickSort, SelectionSort, Sorter, StdSorter};
 
 #[derive(Clone)]
 struct SortEvaluator<T> {

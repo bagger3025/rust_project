@@ -25,4 +25,5 @@ Following: [The Rustonomicon](https://doc.rust-lang.org/nomicon/vec/vec.html)
 - [Subtyping and Variance](https://youtu.be/iVYWDIW71jk)
 - [The Drop Check](https://youtu.be/TJOFSMpJdzg)
   - [Rustonomicon: Drop Check](https://doc.rust-lang.org/nomicon/dropck.html)
+- [Atomics and Memory Ordering](https://youtu.be/rMGWeSjctlY)
 

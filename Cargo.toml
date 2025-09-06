@@ -16,6 +16,7 @@ members = [
   "crust_of_rust/08_drop_check",
   "crust_of_rust/09_atomics_memory_ordering",
   "crust_of_rust/10_dispatch_fat_pointers",
+  "crust_of_rust/11_async_await",
 ]
 
 [dependencies]

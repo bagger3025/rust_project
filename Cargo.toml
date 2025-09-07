@@ -18,6 +18,7 @@ members = [
   "crust_of_rust/10_dispatch_fat_pointers",
   "crust_of_rust/11_async_await",
   "crust_of_rust/12_functions_closures_traits",
+  "crust_of_rust/13_send_sync",
 ]
 
 [dependencies]

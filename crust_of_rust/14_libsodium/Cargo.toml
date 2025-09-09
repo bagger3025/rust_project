@@ -1,0 +1,14 @@
+[package]
+name = "libsodium-sys"
+version = "0.1.0"
+edition = "2024"
+links = "sodium"
+
+[dependencies]
+
+[build-dependencies]
+bindgen = "0.72.1"
+pkg-config = "0.3.32"
+
+[dev-dependencies]
+hex = "0.4.3"
